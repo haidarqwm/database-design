@@ -1,0 +1,161 @@
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+                url('foto1.jpg') center top / cover no-repeat;
+    background-color: #1a1818;
+    color: #ffffff;
+    margin: 0;
+    padding: 0;
+    display: flex; /* Menambahkan flexbox */
+    justify-content: center; /* Memusatkan secara horizontal */
+    align-items: center; /* Memusatkan secara vertikal */
+    height: 100vh; /* Mengatur tinggi body menjadi 100% dari viewport */
+}
+
+.container {
+    background-color: rgba(81, 88, 94, 0.5); /* Mengubah alpha menjadi 0.5 untuk 50% transparansi */
+    backdrop-filter: blur(10px); /* Meningkatkan blur untuk kompensasi transparansi */
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 450px;
+    margin: 20px; /* Ini akan tetap ada, tapi tidak akan mempengaruhi pemusatan */
+}
+
+h1 {
+    color: #ffffff; 
+    text-align: center;
+    margin-bottom: 2rem;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+p {
+    margin-bottom: 20px;
+    font-size: 1.2em;
+    text-align: center;
+}
+
+/* Styling untuk form input dan pembelian barang */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+}
+
+label {
+    font-size: 1.1em;
+    margin-bottom: 5px;
+    color: #fffdfd;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+    width: 100%;
+    padding: 10px;
+    font-size: 1em;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+button.submit-button {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.1em;
+    background-color:  rgba(226, 158, 32, 0.9); /* Change the background color to a new value */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+
+button.submit-button:hover {
+    background-color:  rgba(222, 200, 125, 0.9);
+    transform: scale(1.05);
+}
+
+button.submit-button:active {
+    transform: scale(0.95);
+}
+
+.back-button {
+    display: inline-block;
+    padding: 10px 15px;
+    margin-top: 20px;
+    background-color: rgba(226, 158, 32, 0.9);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.back-button:hover {
+    background-color: rgba(222, 200, 125, 0.9);
+}
+
+/* Styling untuk menu navigasi */
+.menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.menu-button {
+    display: inline-block;
+    padding: 15px 25px;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s, transform 0.2s;
+    font-size: 1.1em;
+    text-align: center;
+}
+
+.input-button,
+.beli-button,
+.listrik-button,
+.atk-button {
+    background-color: #007BFF;
+}
+
+.menu-button:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+.menu-button:active {
+    transform: scale(0.95);
+}
+
+/* Styling untuk tombol umum */
+.button {
+    display: inline-block;
+    padding: 10px 15px;
+    margin-top: 10px;
+    background-color: blue;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.button:hover {
+    background-color: darkblue;
+}
+
+.riwayat-button { 
+    background-color: #9C27B0; 
+}
+
+.riwayat-button:hover { 
+    background-color: #7B1FA2; 
+}
+
