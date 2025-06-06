@@ -290,13 +290,13 @@ $conn->close();
     .barang-terlaris h3 {
         text-align: center;
         margin: 10px 0 0 0;
-        font-size: 25px;
+        font-size: 30px;
         color: #ff9900;
     }
     .barang-terlaris p {
         text-align: left;
         color: #ecf0f1;
-        font-size: 22px;
+        font-size: 26px;
     }
 </style>
 </head>
