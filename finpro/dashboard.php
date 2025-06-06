@@ -281,7 +281,6 @@ $conn->close();
         border-radius: 8px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         width: 36.5%;
-        height: 350px;
         margin-left: 1%;
         display: inline-block;
         vertical-align: top;
@@ -291,13 +290,13 @@ $conn->close();
     .barang-terlaris h3 {
         text-align: center;
         margin: 10px 0 0 0;
-        font-size: 30px;
+        font-size: 25px;
         color: #ff9900;
     }
     .barang-terlaris p {
         text-align: left;
         color: #ecf0f1;
-        font-size: 26px;
+        font-size: 22px;
     }
 </style>
 </head>
