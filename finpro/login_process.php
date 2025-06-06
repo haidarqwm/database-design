@@ -33,7 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Verifikasi password
             if ($password === $row['password']) {
                 $_SESSION['idowner'] = $row['idowner'];
-                $_SESSION['nama_owner'] = $row['nama'];
+                $_SESSION['nama_owner'] = $row['nama_owner'] ?? $row['username'];
                 $_SESSION['login_as_owner'] = true;
 
                 echo "dashboard.php";
