@@ -55,59 +55,63 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $sql = "INSERT INTO $table ($id_column, nama, harga, harga_beli, jumlah, barcode) VALUES (?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("ssddis", $idbarang, $nama, $harga, $harga_beli, $jumlah, $barcode);
-    $stmt->execute();
+    
+    if ($stmt->execute()) {
+        // Buat barcode HTML dengan angka di bawahnya
+        $generatorHTML = new BarcodeGeneratorHTML();
+        $barcodeHTML = $generatorHTML->getBarcode($barcode, $generatorHTML::TYPE_CODE_128);
+        $barcodeHTML .= "<div style='text-align: center; font-size: 14px; margin-top: 5px;'>$barcode</div>";
 
-    // Buat barcode HTML dengan angka di bawahnya
-    $generatorHTML = new BarcodeGeneratorHTML();
-    $barcodeHTML = $generatorHTML->getBarcode($barcode, $generatorHTML::TYPE_CODE_128);
-    $barcodeHTML .= "<div style='text-align: center; font-size: 14px; margin-top: 5px;'>$barcode</div>"; // Tambahkan angka di bawah barcode dengan margin
+        // Buat barcode PNG
+        $generatorPNG = new BarcodeGeneratorPNG();
+        $barcodePNG = $generatorPNG->getBarcode($barcode, $generatorPNG::TYPE_CODE_128);
 
-    // Buat barcode PNG
-    $generatorPNG = new BarcodeGeneratorPNG();
-    $barcodePNG = $generatorPNG->getBarcode($barcode, $generatorPNG::TYPE_CODE_128);
+        // Pastikan direktori barcodes ada
+        $directory = 'barcodes';
+        if (!file_exists($directory)) {
+            mkdir($directory, 0777, true);
+        }
 
-    // Pastikan direktori barcodes ada
-    $directory = 'barcodes';
-    if (!file_exists($directory)) {
-        mkdir($directory, 0777, true);
+        // Simpan barcode PNG
+        $filename = $directory . '/' . $barcode . '.png';
+        file_put_contents($filename, $barcodePNG);
+
+        // Tambahkan kode barcode di bawah gambar
+        $image = imagecreatefrompng($filename);
+        $width = imagesx($image);
+        $height = imagesy($image);
+        
+        // Buat gambar baru dengan tinggi tambahan untuk teks dan padding
+        $padding = 20;
+        $newWidth = $width + ($padding * 2);
+        $newHeight = $height + 30 + ($padding * 2);
+        $newImage = imagecreatetruecolor($newWidth, $newHeight);
+        
+        // Isi background putih
+        $white = imagecolorallocate($newImage, 255, 255, 255);
+        imagefill($newImage, 0, 0, $white);
+        
+        // Copy barcode ke gambar baru dengan padding
+        imagecopy($newImage, $image, $padding, $padding, 0, 0, $width, $height);
+        
+        // Tambahkan teks barcode
+        $black = imagecolorallocate($newImage, 0, 0, 0);
+        $font = 5;
+        $textWidth = imagefontwidth($font) * strlen($barcode);
+        $textX = ($newWidth - $textWidth) / 2;
+        imagestring($newImage, $font, $textX, $height + $padding + 5, $barcode, $black);
+        
+        // Simpan gambar baru
+        imagepng($newImage, $filename);
+        imagedestroy($image);
+        imagedestroy($newImage);
+
+        // Redirect dengan status sukses
+        header("Location: " . $_SERVER['PHP_SELF'] . "?status=success");
+    } else {
+        // Redirect dengan status error
+        header("Location: " . $_SERVER['PHP_SELF'] . "?status=error");
     }
-
-    // Simpan barcode PNG
-    $filename = $directory . '/' . $barcode . '.png';
-    file_put_contents($filename, $barcodePNG);
-
-    // Tambahkan kode barcode di bawah gambar
-    $image = imagecreatefrompng($filename);
-    $width = imagesx($image);
-    $height = imagesy($image);
-    
-    // Buat gambar baru dengan tinggi tambahan untuk teks dan padding
-    $padding = 20; // Padding di semua sisi
-    $newWidth = $width + ($padding * 2); // Tambah padding kiri dan kanan
-    $newHeight = $height + 30 + ($padding * 2); // Tambah padding atas dan bawah, plus ruang untuk teks
-    $newImage = imagecreatetruecolor($newWidth, $newHeight);
-    
-    // Isi background putih
-    $white = imagecolorallocate($newImage, 255, 255, 255);
-    imagefill($newImage, 0, 0, $white);
-    
-    // Copy barcode ke gambar baru dengan padding
-    imagecopy($newImage, $image, $padding, $padding, 0, 0, $width, $height);
-    
-    // Tambahkan teks barcode
-    $black = imagecolorallocate($newImage, 0, 0, 0);
-    $font = 5; // Font size
-    $textWidth = imagefontwidth($font) * strlen($barcode);
-    $textX = ($newWidth - $textWidth) / 2;
-    imagestring($newImage, $font, $textX, $height + $padding + 5, $barcode, $black);
-    
-    // Simpan gambar baru
-    imagepng($newImage, $filename);
-    imagedestroy($image);
-    imagedestroy($newImage);
-
-    // Redirect untuk mencegah duplikasi saat refresh
-    header("Location: " . $_SERVER['PHP_SELF']);
     exit();
 }
 ?>
@@ -174,12 +178,83 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             background-color: #f8d7da;
             color: #721c24;
         }
+        /* Styling untuk notifikasi */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 5px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            animation: slideIn 0.5s ease-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .notification.success {
+            background-color: #4CAF50;
+        }
+
+        .notification.error {
+            background-color: #f44336;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1 class="judul">Input Barang</h1>
-        <?php echo $message; ?>
+        <?php 
+        // Tampilkan notifikasi jika ada
+        if (isset($_GET['status'])) {
+            $message = '';
+            $type = '';
+            
+            switch ($_GET['status']) {
+                case 'success':
+                    $message = 'Barang berhasil ditambahkan!';
+                    $type = 'success';
+                    break;
+                case 'error':
+                    $message = 'Gagal menambahkan barang!';
+                    $type = 'error';
+                    break;
+            }
+            
+            if ($message) {
+                echo "<div class='notification $type' id='notification'>$message</div>";
+                echo "<script>
+                    setTimeout(function() {
+                        var notification = document.getElementById('notification');
+                        notification.style.animation = 'fadeOut 0.5s ease-out forwards';
+                        setTimeout(function() {
+                            notification.remove();
+                        }, 500);
+                    }, 3000);
+                </script>";
+            }
+        }
+        ?>
         <?php echo $barcodeHTML ?? ''; ?>
         <form id="barangForm" action="" method="post">
             <div class="form-group">

@@ -118,6 +118,29 @@ session_destroy();
         .submit-btn:hover {
             background-color: rgba(192, 57, 43, 0.9);
         }
+        /* Styling untuk notifikasi */
+        .notification {
+            position: relative;
+            margin-top: 15px;
+            padding: 15px 25px;
+            border-radius: 5px;
+            color: white;
+            font-weight: 500;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.5s ease-out;
+        }
+        .notification.error {
+            background-color:rgba(226, 158, 32, 0.9);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
     </style>
     <script>
         function toggleLoginForm(type) {
@@ -132,6 +155,54 @@ session_destroy();
                 formOwner.style.display = "none"; // Sembunyikan form owner
             }
         }
+
+        function showNotification(message, type = 'error') {
+            // Hapus notifikasi lama jika ada
+            const oldNotification = document.querySelector('.notification');
+            if (oldNotification) {
+                oldNotification.remove();
+            }
+
+            // Buat notifikasi baru
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            // Tambahkan notifikasi ke form yang aktif
+            const activeForm = document.querySelector('.login-form[style*="display: block"]');
+            if (activeForm) {
+                activeForm.appendChild(notification);
+            }
+
+            // Hilangkan notifikasi setelah 3 detik
+            setTimeout(() => {
+                notification.style.animation = 'fadeOut 0.5s ease-out forwards';
+                setTimeout(() => {
+                    notification.remove();
+                }, 500);
+            }, 3000);
+        }
+
+        function handleLogin(event, form) {
+            event.preventDefault();
+            const formData = new FormData(form);
+
+            fetch('login_process.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                if (data.includes('dashboard')) {
+                    window.location.href = data.trim();
+                } else {
+                    showNotification(data);
+                }
+            })
+            .catch(error => {
+                showNotification('Terjadi kesalahan saat login');
+            });
+        }
     </script>
 </head>
 <body>
@@ -143,22 +214,23 @@ session_destroy();
         </div>
 
         <div id="loginForm" class="login-form">
-            <form action="login_process.php" method="post">
+            <form onsubmit="handleLogin(event, this)">
                 <input type="hidden" name="userType" value="karyawan">
-                <div class="form-group">
-                    <label for="idkaryawan">ID Karyawan:</label>
-                    <input type="text" id="idkaryawan" name="idkaryawan" required>
-                </div>
                 <div class="form-group">
                     <label for="nama">Nama Karyawan:</label>
                     <input type="text" id="nama" name="nama" required>
+                </div>
+                <div class="form-group">
+                    <label for="tanggal_lahir">Tanggal Lahir (DDMMYYYY):</label>
+                    <input type="text" id="tanggal_lahir" name="tanggal_lahir" required 
+                           pattern="\d{8}" minlength="8" maxlength="8">
                 </div>
                 <button type="submit" class="submit-btn">Masuk</button>
             </form>
         </div>
 
         <div id="loginFormOwner" class="login-form" style="display: none;">
-            <form action="login_process.php" method="post">
+            <form onsubmit="handleLogin(event, this)">
                 <input type="hidden" name="userType" value="owner">
                 <div class="form-group">
                     <label for="username">Username:</label>
@@ -170,7 +242,7 @@ session_destroy();
                 </div>
                 <button type="submit" class="submit-btn">Masuk</button>
             </form>
-</div>
+        </div>
     </div>
 </body>
 </html>

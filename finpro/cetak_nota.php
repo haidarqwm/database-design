@@ -128,7 +128,7 @@ $details = $result_detail->fetch_all(MYSQLI_ASSOC);
                 } elseif (!empty($transaksi['namaowner'])) { // Pastikan untuk memeriksa kunci ini
                     echo htmlspecialchars($transaksi['namaowner']);
                 } else {
-                    echo "hubungi owner";
+                    echo "Owner";
                 }
                 ?>
             </p>

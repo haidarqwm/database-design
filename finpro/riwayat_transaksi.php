@@ -262,7 +262,7 @@
                     echo "<td>" . htmlspecialchars($row['tanggal_transaksi'] ?? '') . "</td>";
                     echo "<td>" . htmlspecialchars($row['items'] ?? '') . "</td>";
                     echo "<td>Rp " . number_format($row['total_harga'] ?? 0, 0, ',', '.') . "</td>";
-                    echo "<td>" . htmlspecialchars($row['nama_karyawan'] ?? 'owner') . "</td>";
+                    echo "<td>" . htmlspecialchars($row['nama_karyawan'] ?? 'Owner') . "</td>";
                     echo "<td>
                         <div class='action-buttons'>
                             <button onclick=\"window.open('cetak_nota.php?idtransaksi=" . urlencode($row['idtransaksi'] ?? '') . "', '_blank');\">Lihat Nota</button>

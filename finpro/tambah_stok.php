@@ -1,50 +1,23 @@
 <?php
 include 'config.php'; // Include koneksi ke database
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Ambil data dari form
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $jenis = $_POST['jenis'];
-    $idlistrik = $_POST['idlistrik']; 
+    $idlistrik = $_POST['idlistrik'];
     $jumlah = $_POST['jumlah'];
-
-    // Ambil nama barang dari tabel yang sesuai
-    if ($jenis == 'listrik') {
-        $table = 'datalistrik'; 
-        $id_field = 'idlistrik'; 
-    } elseif ($jenis == 'atk') {
-        $table = 'dataatk';
-        $id_field = 'idatk'; 
+    
+    $table = ($jenis == 'listrik') ? 'datalistrik' : 'dataatk';
+    $id_field = ($jenis == 'listrik') ? 'idlistrik' : 'idatk';
+    
+    $stmt = $conn->prepare("UPDATE $table SET jumlah = jumlah + ? WHERE $id_field = ?");
+    $stmt->bind_param("is", $jumlah, $idlistrik);
+    
+    if ($stmt->execute()) {
+        header("Location: view.php?jenis=$jenis&status=add_success");
     } else {
-        echo "Jenis barang tidak valid.";
-        exit;
+        header("Location: view.php?jenis=$jenis&status=add_error");
     }
-
-    // Query untuk mendapatkan stok saat ini
-    $sql = "SELECT jumlah FROM $table WHERE $id_field = ?"; 
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $idlistrik);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
-        $stokSekarang = $row['jumlah'];
-
-        // Update stok barang dengan menambahkan jumlah baru
-        $stokBaru = $stokSekarang + $jumlah;
-        $updateSql = "UPDATE $table SET jumlah = ? WHERE $id_field = ?";
-        $stmt_update = $conn->prepare($updateSql);
-        $stmt_update->bind_param("is", $stokBaru, $idlistrik);
-
-        if ($stmt_update->execute()) {
-            echo "Stok barang berhasil ditambahkan.<br>";
-        } else {
-            echo "Error: " . $updateSql . "<br>" . $conn->error;
-        }
-    } else {
-        echo "Barang tidak ditemukan.";
-    }
-    $conn->close();
+    exit();
 } else {
     echo "Request method salah.";
 }

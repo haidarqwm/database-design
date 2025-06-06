@@ -10,12 +10,21 @@ if (!isset($_GET['idtransaksi'])) {
 $idtransaksi = $_GET['idtransaksi'];
 
 // Ambil data transaksi dari database
-$query = "SELECT * FROM transaksi WHERE idtransaksi = ?";
+$query = "SELECT t.*, k.nama_karyawan 
+          FROM transaksi t 
+          LEFT JOIN karyawan k ON t.idkaryawan = k.idkaryawan 
+          WHERE t.idtransaksi = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("s", $idtransaksi);
 $stmt->execute();
 $result = $stmt->get_result();
 $transaksi = $result->fetch_assoc();
+
+// Debug: Tampilkan nilai yang didapat
+echo "<!-- Debug Info:";
+echo "ID Karyawan: " . ($transaksi['idkaryawan'] ?? 'kosong') . "<br>";
+echo "Nama Karyawan: " . ($transaksi['nama_karyawan'] ?? 'kosong') . "<br>";
+echo "-->";
 
 // Ambil detail transaksi
 $query_detail = "SELECT * FROM transaksi_detail WHERE idtransaksi = ?";
@@ -115,11 +124,21 @@ $details = $result_detail->fetch_all(MYSQLI_ASSOC);
            
             <p><strong>Kasir:</strong> 
             <?php 
+            // Debug information
+            echo "<!-- Debug Info:";
+            echo "ID Karyawan from DB: " . ($transaksi['idkaryawan'] ?? 'kosong') . "<br>";
+            echo "Nama Karyawan from DB: " . ($transaksi['nama_karyawan'] ?? 'kosong') . "<br>";
+            echo "Session ID Karyawan: " . ($_SESSION['idkaryawan'] ?? 'kosong') . "<br>";
+            echo "Session Nama Karyawan: " . ($_SESSION['nama_karyawan'] ?? 'kosong') . "<br>";
+            echo "-->";
+
             // Tampilkan nama karyawan jika ada, jika tidak tampilkan "owner"
-            if (!empty($transaksi['idkaryawan'])) {
+            if (!empty($transaksi['idkaryawan']) && !empty($transaksi['nama_karyawan'])) {
                 echo htmlspecialchars($transaksi['nama_karyawan']);
+            } else if (!empty($_SESSION['idkaryawan']) && !empty($_SESSION['nama_karyawan'])) {
+                echo htmlspecialchars($_SESSION['nama_karyawan']);
             } else {
-                echo "owner"; // Jika tidak ada karyawan yang menangani, tampilkan "owner"
+                echo "Owner"; // Jika tidak ada karyawan yang menangani, tampilkan "owner"
             }
             ?>
             </p>

@@ -123,16 +123,107 @@ $result = $conn->query($sql);
         .back-button:hover {
             background-color: #0056b3;
         }
+
+        /* Styling untuk notifikasi */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 5px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            animation: slideIn 0.5s ease-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .notification.success {
+            background-color: #4CAF50;
+        }
+
+        .notification.error {
+            background-color: #f44336;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Lihat Stok Barang <?php echo ($jenis == 'atk' ? 'ATK' : ucfirst($jenis)); ?></h1>
         
+        <?php
+        // Tampilkan notifikasi jika ada
+        if (isset($_GET['status'])) {
+            $message = '';
+            $type = '';
+            
+            switch ($_GET['status']) {
+                case 'delete_success':
+                    $message = 'Barang berhasil dihapus!';
+                    $type = 'success';
+                    break;
+                case 'delete_error':
+                    $message = 'Gagal menghapus barang!';
+                    $type = 'error';
+                    break;
+                case 'reduce_success':
+                    $message = 'Stok berhasil dikurangi!';
+                    $type = 'success';
+                    break;
+                case 'reduce_error':
+                    $message = 'Gagal mengurangi stok!';
+                    $type = 'error';
+                    break;
+                case 'add_success':
+                    $message = 'Stok berhasil ditambahkan!';
+                    $type = 'success';
+                    break;
+                case 'add_error':
+                    $message = 'Gagal menambahkan stok!';
+                    $type = 'error';
+                    break;
+            }
+            
+            if ($message) {
+                echo "<div class='notification $type' id='notification'>$message</div>";
+                echo "<script>
+                    setTimeout(function() {
+                        var notification = document.getElementById('notification');
+                        notification.style.animation = 'fadeOut 0.5s ease-out forwards';
+                        setTimeout(function() {
+                            notification.remove();
+                        }, 500);
+                    }, 3000);
+                </script>";
+            }
+        }
+        ?>
+        
         <div class="table-container">
             <table>
                 <thead>
                     <tr>
+                        <th>ID Barang</th>
                         <th>Nama Barang</th>
                         <th>Harga Jual</th>
                         <th>Harga Beli</th>
@@ -155,6 +246,7 @@ $result = $conn->query($sql);
                     if ($result->num_rows > 0) {
                         while ($row = $result->fetch_assoc()) {
                             echo "<tr>
+                                    <td>" . ($jenis == 'listrik' ? $row['idlistrik'] : $row['idatk']) . "</td>
                                     <td>{$row['nama']}</td>
                                     <td>Rp " . number_format($row['harga'], 0, ',', '.') . "</td>
                                     <td>Rp " . number_format($row['harga_beli'], 0, ',', '.') . "</td>

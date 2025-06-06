@@ -4,44 +4,64 @@ include 'config.php';
 // Handle tambah/edit karyawan
 $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $idkaryawan = $_POST['idkaryawan'] ?? '';
     $nama_karyawan = $_POST['nama_karyawan'] ?? '';
     $gender = $_POST['gender'] ?? '';
     $edit_mode = isset($_POST['edit_mode']) && $_POST['edit_mode'] === '1';
     $old_idkaryawan = $_POST['old_idkaryawan'] ?? '';
     $alamat = $_POST['alamat'] ?? '';
     $no_telp = $_POST['no_telp'] ?? '';
+    $tanggal_lahir = $_POST['tanggal_lahir'] ?? '';
 
-    // Validasi ID Karyawan harus 6 digit angka
-    if (!preg_match('/^\d{6}$/', $idkaryawan)) {
-        $message = "<div style='color:red;'>ID Karyawan harus 6 digit angka!</div>";
-    } else if (!preg_match('/^\d{12,}$/', $no_telp)) {
-        $message = "<div style='color:red;'>No. Telepon minimal 12 digit angka!</div>";
+    // Validasi format tanggal lahir
+    if (!preg_match('/^\d{2}-\d{2}-\d{4}$/', $tanggal_lahir)) {
+        $message = "<div style='color:red;'>Format Tanggal Lahir harus DD-MM-YYYY (contoh: 01-01-2023)!</div>";
     } else {
-        if ($edit_mode) {
-            // Update karyawan
-            $stmt = $conn->prepare("UPDATE karyawan SET idkaryawan=?, nama_karyawan=?, gender=?, alamat=?, no_telp=? WHERE idkaryawan=?");
-            $stmt->bind_param("ssssss", $idkaryawan, $nama_karyawan, $gender, $alamat, $no_telp, $old_idkaryawan);
-            if ($stmt->execute()) {
-                $message = "<div style='color:green;'>Data karyawan berhasil diupdate!</div>";
-            } else {
-                $message = "<div style='color:red;'>Gagal update: {$stmt->error}</div>";
-            }
-            $stmt->close();
+        // Konversi format tanggal lahir dari DD-MM-YYYY ke YYYY-MM-DD untuk database
+        $date_parts = explode('-', $tanggal_lahir);
+        $day = $date_parts[0];
+        $month = $date_parts[1];
+        $year = $date_parts[2];
+        $tanggal_lahir = $year . '-' . $month . '-' . $day;
+
+        // Generate ID Karyawan otomatis
+        if (!$edit_mode) {
+            $result = $conn->query("SELECT MAX(CAST(SUBSTRING(idkaryawan, 4) AS UNSIGNED)) as max_id FROM karyawan WHERE idkaryawan LIKE 'KR-%'");
+            $row = $result->fetch_assoc();
+            $next_id = ($row['max_id'] ?? 0) + 1;
+            $idkaryawan = 'KR-' . str_pad($next_id, 3, '0', STR_PAD_LEFT);
         } else {
-            // Tambah karyawan baru
-            $stmt = $conn->prepare("INSERT INTO karyawan (idkaryawan, nama_karyawan, gender, alamat, no_telp) VALUES (?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssss", $idkaryawan, $nama_karyawan, $gender, $alamat, $no_telp);
-            if ($stmt->execute()) {
-                $message = "<div style='color:green;'>Karyawan berhasil ditambahkan!</div>";
-            } else {
-                $message = "<div style='color:red;'>Gagal tambah: {$stmt->error}</div>";
-            }
-            $stmt->close();
+            $idkaryawan = $old_idkaryawan;
         }
-        // Redirect untuk mencegah resubmit
-        header("Location: input_karyawan.php?msg=".urlencode(strip_tags($message)));
-        exit();
+
+        // Validasi nomor telepon
+        if (!preg_match('/^\d{12}$/', $no_telp)) {
+            $message = "<div style='color:red;'>No. Telepon harus tepat 12 digit angka!</div>";
+        } else {
+            if ($edit_mode) {
+                // Update karyawan
+                $stmt = $conn->prepare("UPDATE karyawan SET idkaryawan=?, nama_karyawan=?, gender=?, alamat=?, no_telp=?, tanggal_lahir=? WHERE idkaryawan=?");
+                $stmt->bind_param("sssssss", $idkaryawan, $nama_karyawan, $gender, $alamat, $no_telp, $tanggal_lahir, $old_idkaryawan);
+                if ($stmt->execute()) {
+                    $message = "Data karyawan berhasil diupdate!";
+                } else {
+                    $message = "Gagal update: {$stmt->error}";
+                }
+                $stmt->close();
+            } else {
+                // Tambah karyawan baru
+                $stmt = $conn->prepare("INSERT INTO karyawan (idkaryawan, nama_karyawan, gender, alamat, no_telp, tanggal_lahir) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("ssssss", $idkaryawan, $nama_karyawan, $gender, $alamat, $no_telp, $tanggal_lahir);
+                if ($stmt->execute()) {
+                    $message = "Karyawan berhasil ditambahkan!";
+                } else {
+                    $message = "Gagal tambah: {$stmt->error}";
+                }
+                $stmt->close();
+            }
+            // Redirect untuk mencegah resubmit
+            header("Location: input_karyawan.php?msg=".urlencode($message));
+            exit();
+        }
     }
 }
 
@@ -51,18 +71,23 @@ if (isset($_GET['delete'])) {
     $stmt = $conn->prepare("DELETE FROM karyawan WHERE idkaryawan=?");
     $stmt->bind_param("s", $idkaryawan);
     if ($stmt->execute()) {
-        $message = "<div style='color:green;'>Karyawan berhasil dihapus!</div>";
+        $message = "Karyawan berhasil dihapus!";
     } else {
-        $message = "<div style='color:red;'>Gagal hapus: {$stmt->error}</div>";
+        $message = "Gagal hapus: {$stmt->error}";
     }
     $stmt->close();
-    header("Location: input_karyawan.php?msg=".urlencode(strip_tags($message)));
+    header("Location: input_karyawan.php?msg=".urlencode($message));
     exit();
 }
 
 // Ambil pesan dari redirect
 if (isset($_GET['msg'])) {
-    $message = $_GET['msg'];
+    $message_text = htmlspecialchars($_GET['msg']);
+    if (strpos($message_text, 'Gagal') === 0) {
+        $message = "<div style='color:red;'>" . $message_text . "</div>";
+    } else {
+        $message = "<div style='color:green;'>" . $message_text . "</div>";
+    }
 }
 
 // Handle edit: ambil data karyawan untuk form
@@ -72,8 +97,18 @@ $edit_data = [
     'nama_karyawan' => '',
     'gender' => '',
     'alamat' => '',
-    'no_telp' => ''
+    'no_telp' => '',
+    'tanggal_lahir' => ''
 ];
+
+// Generate ID Karyawan otomatis untuk form baru
+if (!isset($_GET['edit'])) {
+    $result = $conn->query("SELECT MAX(CAST(SUBSTRING(idkaryawan, 4) AS UNSIGNED)) as max_id FROM karyawan WHERE idkaryawan LIKE 'KR-%'");
+    $row = $result->fetch_assoc();
+    $next_id = ($row['max_id'] ?? 0) + 1;
+    $edit_data['idkaryawan'] = 'KR-' . str_pad($next_id, 3, '0', STR_PAD_LEFT);
+}
+
 if (isset($_GET['edit'])) {
     $edit_mode = true;
     $idkaryawan = $_GET['edit'];
@@ -83,6 +118,11 @@ if (isset($_GET['edit'])) {
     $result = $stmt->get_result();
     if ($row = $result->fetch_assoc()) {
         $edit_data = $row;
+        // Konversi format tanggal lahir dari YYYY-MM-DD ke DD-MM-YYYY
+        if (!empty($edit_data['tanggal_lahir'])) {
+            $date = new DateTime($edit_data['tanggal_lahir']);
+            $edit_data['tanggal_lahir'] = $date->format('d-m-Y');
+        }
     }
     $stmt->close();
 }
@@ -261,12 +301,50 @@ while ($row = $result->fetch_assoc()) {
             color: #fff;
             background: #23272b;
         }
+
+        /* Styling untuk notifikasi */
+        .notification {
+            position: relative;
+            margin-top: 15px;
+            padding: 15px 25px;
+            border-radius: 5px;
+            color: white;
+            font-weight: 500;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .notification.success {
+            background-color: #4CAF50;
+        }
+
+        .notification.error {
+            background-color: #f44336;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Manajemen Karyawan</h1>
-        <?php echo $message; ?>
         <form action="input_karyawan.php" method="post">
             <input type="hidden" name="edit_mode" value="<?php echo $edit_mode ? '1' : ''; ?>">
             <input type="hidden" name="old_idkaryawan" value="<?php echo htmlspecialchars($edit_data['idkaryawan'] ?? ''); ?>">
@@ -274,8 +352,7 @@ while ($row = $result->fetch_assoc()) {
                 <div>
                     <div class="form-group">
                         <label for="idkaryawan">ID Karyawan:</label>
-                        <input type="text" id="idkaryawan" name="idkaryawan" value="<?php echo htmlspecialchars($edit_data['idkaryawan'] ?? ''); ?>" required <?php echo $edit_mode ? 'readonly' : ''; ?>
-                        pattern="\d{6}" minlength="6" maxlength="6" title="ID Karyawan harus 6 digit angka">
+                        <input type="text" id="idkaryawan" name="idkaryawan" value="<?php echo htmlspecialchars($edit_data['idkaryawan'] ?? ''); ?>" readonly>
                     </div>
                     <div class="form-group">
                         <label for="nama_karyawan">Nama Karyawan:</label>
@@ -297,7 +374,13 @@ while ($row = $result->fetch_assoc()) {
                     </div>
                     <div class="form-group">
                         <label for="no_telp">No. Telepon:</label>
-                        <input type="text" id="no_telp" name="no_telp" value="<?php echo htmlspecialchars($edit_data['no_telp'] ?? ''); ?>" required pattern="\d{12,}" minlength="12" title="No. Telepon minimal 12 digit angka">
+                        <input type="text" id="no_telp" name="no_telp" value="<?php echo htmlspecialchars($edit_data['no_telp'] ?? ''); ?>" required pattern="\d{12}" minlength="12" title="No. Telepon harus tepat 12 digit angka">
+                    </div>
+                    <div class="form-group">
+                        <label for="tanggal_lahir">Tanggal Lahir:</label>
+                        <input type="text" id="tanggal_lahir" name="tanggal_lahir" 
+                               value="<?php echo htmlspecialchars($edit_data['tanggal_lahir'] ?? ''); ?>" 
+                               required pattern="\d{2}-\d{2}-\d{4}">
                     </div>
                 </div>
             </div>
@@ -305,6 +388,24 @@ while ($row = $result->fetch_assoc()) {
             <?php if($edit_mode): ?>
                 <a href="input_karyawan.php" class="back-btn" style="background:#6c757d;">Batal Edit</a>
             <?php endif; ?>
+            <?php 
+            // Tampilkan notifikasi jika ada
+            if (isset($_GET['msg'])) {
+                $message_text = htmlspecialchars($_GET['msg']);
+                $type = strpos($message_text, 'Gagal') === 0 ? 'error' : 'success';
+                
+                echo "<div class='notification $type' id='notification'>$message_text</div>";
+                echo "<script>
+                    setTimeout(function() {
+                        var notification = document.getElementById('notification');
+                        notification.style.animation = 'fadeOut 0.5s ease-out forwards';
+                        setTimeout(function() {
+                            notification.remove();
+                        }, 500);
+                    }, 3000);
+                </script>";
+            }
+            ?>
         </form>
         <div class="table-responsive">
             <table>
@@ -315,6 +416,7 @@ while ($row = $result->fetch_assoc()) {
                         <th>Jenis Kelamin</th>
                         <th class="col-alamat">Alamat</th>
                         <th class="col-telp">No. Telepon</th>
+                        <th>Tanggal Lahir</th>
                         <th class="col-aksi">Aksi</th>
                     </tr>
                 </thead>
@@ -326,6 +428,12 @@ while ($row = $result->fetch_assoc()) {
                         <td><?php echo $row['gender'] === 'L' ? 'Laki-laki' : 'Perempuan'; ?></td>
                         <td class="col-alamat"><?php echo htmlspecialchars($row['alamat'] ?? ''); ?></td>
                         <td class="col-telp"><?php echo htmlspecialchars($row['no_telp'] ?? ''); ?></td>
+                        <td><?php 
+                            if (!empty($row['tanggal_lahir'])) {
+                                $date = new DateTime($row['tanggal_lahir']);
+                                echo $date->format('d-m-Y');
+                            }
+                        ?></td>
                         <td class="col-aksi">
                             <a href="input_karyawan.php?edit=<?php echo urlencode($row['idkaryawan']); ?>" class="action-btn edit-btn">Edit</a>
                             <a href="input_karyawan.php?delete=<?php echo urlencode($row['idkaryawan']); ?>" class="action-btn delete-btn" onclick="return confirm('Yakin ingin menghapus karyawan ini?');">Hapus</a>
