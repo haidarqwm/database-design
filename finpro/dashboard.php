@@ -33,6 +33,23 @@ $total_produk_terjual = (int)$row_total['total_produk_terjual'];
 
 $stmt_total->close();
 
+// Query untuk mendapatkan data penjualan per hari dalam bulan ini
+$query_chart = "SELECT DATE(tanggal_transaksi) as tanggal, SUM(total_harga) as total 
+                FROM transaksi 
+                WHERE tanggal_transaksi BETWEEN ? AND ? 
+                GROUP BY DATE(tanggal_transaksi) 
+                ORDER BY tanggal";
+$stmt_chart = $conn->prepare($query_chart);
+$stmt_chart->bind_param("ss", $start_date, $end_date);
+$stmt_chart->execute();
+$result_chart = $stmt_chart->get_result();
+
+$data = [];
+while ($row = $result_chart->fetch_assoc()) {
+    $data[$row['tanggal']] = (float)$row['total'];
+}
+$stmt_chart->close();
+
 // Query untuk mendapatkan 5 barang yang paling banyak dibeli
 $query_top_items = "SELECT nama_barang, SUM(jumlah) as total_terjual 
                    FROM transaksi_detail
