@@ -193,6 +193,7 @@ session_destroy();
             })
             .then(response => response.text())
             .then(data => {
+                console.log('Server response:', data);
                 if (data.includes('dashboard')) {
                     window.location.href = data.trim();
                 } else {
@@ -200,6 +201,7 @@ session_destroy();
                 }
             })
             .catch(error => {
+                console.error('Login error:', error);
                 showNotification('Terjadi kesalahan saat login');
             });
         }
